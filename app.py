@@ -1,6 +1,7 @@
 import cv2
-import numpy
+import numpy as np
 import argparse
+import streamlit as st
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-f","--fname")
@@ -9,7 +10,6 @@ args = parser.parse_args()
 
 def find_faces(img):
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
     faces = face_cascade.detectMultiScale(img_gray)
     # print the number of faces detected
     print(faces)
@@ -40,7 +40,6 @@ def text_placement_vertical(img, faces):
             cv2.line(img, pt1=(0, y), pt2=(im_width, y), color=(0, 255, 0), thickness=1)
             face_bbox_top.append(y - height)
             face_bbox_bot.append(y + height)
-
 
     margin_top = min(face_bbox_top)
     margin_bot = im_height - max(face_bbox_bot)
@@ -97,32 +96,45 @@ def place_text(text, img, center_max_space):
                 print(textSize)
                 return scale / 10
         return 1
-
     font_size = get_optimal_font_scale(text, int(rect_width * 0.9))
     cv2.putText(img, text, org, font, font_size, color, text_thickness, cv2.LINE_AA)
-
     cv2.imwrite("output/img_text.jpg", img)
+    return img
+
+######## STREAMLIT INTEGRATION #######
+st.title('Text Placement App')
+st.write("Welcome to this application for adding Instagram-style captions to your images! Start by uploading your image. "
+             "Next, provide your desired caption. The app will then analyze your photo, detect faces, and intelligently "
+             "position the caption to avoid covering anyone's face.")
 
 
-#bring in the photo
-img = cv2.imread(args.fname)
+# initialize image upload widget
+st.subheader("To begin, upload an image")
+uploaded_file = st.file_uploader("")
+if uploaded_file is not None:
+    upload = st.image(uploaded_file, caption='Original Image', use_column_width=True)
 
-if img is None:
-    print('image did not load')
+    # initialize text input widget
+    text_input = st.text_input("Enter your caption below:")
 
-else:
-    # initialize the face recognizer (default face haar cascade)
-    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_alt.xml')
-    print(face_cascade.empty())
+    if st.button("Caption Image", type="primary"):
+        # open image and begin processing
+        file_data = np.frombuffer(uploaded_file.read(), np.uint8)
+        img = cv2.imdecode(file_data, cv2.IMREAD_COLOR)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        # initialize the face recognizer (default face haar cascade)
+        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_alt.xml')
+        print(face_cascade.empty())
+        im_height, im_width, channels = img.shape
+        faces = find_faces(img)
+        if len(faces)==0:
+            center_max_space = int(im_height * 0.75)
+        else:
+            center_max_space = text_placement_vertical(img,faces)
+        processed_img = place_text(text_input, img, center_max_space)
 
-    im_height, im_width, channels = img.shape
+        # display final image
+        st.image(processed_img, caption='Processed Image', use_column_width=True)
 
-    faces = find_faces(img)
 
 
-    if len(faces)==0:
-        center_max_space = int(im_height * 0.75)
-    else:
-        center_max_space = text_placement_vertical(img,faces)
-
-    place_text(args.text, img, center_max_space)
