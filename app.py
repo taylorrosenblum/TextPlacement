@@ -56,6 +56,22 @@ def text_placement_vertical(img, faces, engineering_mode):
     cv2.imwrite("output/img_annotated.jpg", img)
     return best_vert_placement
 
+
+def get_optimal_font_scale(text, width, font):
+    '''
+    Reduce text size until full message fits
+    :param text:
+    :param width:
+    :return: optimal font size
+    '''
+    for scale in reversed(range(0, 24, 1)):
+        textSize = cv2.getTextSize(text, font, fontScale=scale / 10, thickness=1)
+        new_width = textSize[0][0]
+        if (new_width <= width):
+            print(new_width)
+            print(textSize)
+            return scale / 10
+
 def place_text(text, img, best_vert_placement, engineering_mode):
     '''
     Place caption on the image
@@ -98,16 +114,7 @@ def place_text(text, img, best_vert_placement, engineering_mode):
     color = (255, 255, 255)  # Blue color in BGR
     text_thickness = int(im_width / 300)
 
-    def get_optimal_font_scale(text, width):
-        for scale in reversed(range(0, 30, 1)):
-            textSize = cv2.getTextSize(text, font, fontScale=scale / 10, thickness=1)
-            new_width = textSize[0][0]
-            if (new_width <= width):
-                print(new_width)
-                print(textSize)
-                return scale / 10
-        return 1
-    font_size = get_optimal_font_scale(text, int(rect_width * 0.9))
+    font_size = get_optimal_font_scale(text, int(rect_width * 0.9), font)
     cv2.putText(img, text, org, font, font_size, color, text_thickness, cv2.LINE_AA)
     cv2.imwrite("output/img_text.jpg", img)
     return img
