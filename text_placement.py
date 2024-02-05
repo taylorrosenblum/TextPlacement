@@ -36,7 +36,7 @@ def text_placement_vertical(img, faces, engineering_mode):
     face_bbox_top = []
     face_bbox_bot = []
     for x, y, width, height in faces:
-        face_bbox_top.append(y - height)
+        face_bbox_top.append(y)
         face_bbox_bot.append(y + height)
         if engineering_mode:
             cv2.rectangle(img, (x, y), (x + width, y + height), color=(255, 0, 0), thickness=2)
@@ -45,7 +45,7 @@ def text_placement_vertical(img, faces, engineering_mode):
     margin_top = min(face_bbox_top)
     margin_bot = im_height - max(face_bbox_bot)
     if margin_top > margin_bot:
-        best_vert_placement = int(margin_top)
+        best_vert_placement = int(margin_top / 2)
     else:
         best_vert_placement = int((im_height + max(face_bbox_bot)) / 2)
 
@@ -56,21 +56,24 @@ def text_placement_vertical(img, faces, engineering_mode):
     return best_vert_placement
 
 
-def get_optimal_font_scale(text, width, font):
+def get_optimal_font_scale(text, width, height, font):
     '''
     Reduce text size until full message fits
     :param text:
     :param width:
     :return: optimal font size
     '''
-    for scale in reversed(range(0, 24, 1)):
-        textSize = cv2.getTextSize(text, font, fontScale=scale / 10, thickness=1)
+    scale_found = False
+    scale = 3
+    while scale_found == False:
+        textSize = cv2.getTextSize(text, font, fontScale=scale, thickness=1)
         new_width = textSize[0][0]
-        if (new_width <= width):
-            print(new_width)
-            print(textSize)
-            return scale / 10
-
+        new_height = textSize[0][1]
+        if (new_width <= width) and (new_height <= height):
+            scale_found = True
+        else:
+            scale -= 0.01
+    return scale
 
 def place_text(text, img, best_vert_placement, engineering_mode):
     '''
@@ -85,8 +88,8 @@ def place_text(text, img, best_vert_placement, engineering_mode):
     im_center = int(im_width * 0.5)
 
     # set width and height of caption background box
-    rect_width = int(0.75 * im_width)  # 50% the width
-    rect_height = 60 # not sure why this works
+    rect_width = int(0.75 * im_width)  # 75% the width
+    rect_height = int(0.08 * im_height)  # 8% the width
 
     # draw the caption background box
     start_point = (im_center - int(rect_width * 0.5),
@@ -106,8 +109,9 @@ def place_text(text, img, best_vert_placement, engineering_mode):
     color = (255, 255, 255)  # Blue color in BGR
     text_thickness = int(im_width / 300)
 
-    font_size = get_optimal_font_scale(text, int(rect_width * 0.9), font)
-    cv2.putText(img, text, org, font, font_size, color, text_thickness, cv2.LINE_AA)
+    font_scale = get_optimal_font_scale(text, rect_width - (2 * text_margin_x),
+                                        rect_height - ( 2 * text_margin_y), font)
+    cv2.putText(img, text, org, font, font_scale, color, text_thickness, cv2.LINE_AA)
     cv2.imwrite("output/img_text.jpg", img)
     return img
 
@@ -119,7 +123,6 @@ if img is None:
 else:
     # initialize the face recognizer (default face haar cascade)
     face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_alt.xml')
-    print(face_cascade.empty())
     im_height, im_width, channels = img.shape
     faces = find_faces(img)
     if len(faces)==0:
