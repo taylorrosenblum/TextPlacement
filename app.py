@@ -5,6 +5,7 @@ from text_placement import find_faces, text_placement_vertical, place_text
 
 engineering_mode = False
 
+st.image('images/headline_figure.png')
 st.title('Text Placement App')
 st.write("Welcome to my text placement app! Upload your image and specify your desired caption. "
              "This application is designed to detect faces and strategically position the caption to ensure it doesn't "
