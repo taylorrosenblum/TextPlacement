@@ -9,7 +9,7 @@ st.title('Text Placement App')
 st.write("Welcome to my text placement app! Upload your image and specify your desired caption. "
              "This application is designed to detect faces and strategically position the caption to ensure it doesn't "
              "cover anyone's face, providing a seamless and visually appealing result.")
-
+st.write("Read more about this project in [this blog post](https://taylorrosenblum.blogspot.com/2024/02/smarter-text-placement-for-seflies.html)")
 
 # initialize image upload widget
 uploaded_file = st.file_uploader("1) To begin, upload an image")
@@ -45,5 +45,6 @@ if uploaded_file is not None:
 
         # display final image
         st.image(processed_img, caption='Processed Image', use_column_width=True)
+
 
 
