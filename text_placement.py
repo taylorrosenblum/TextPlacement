@@ -107,10 +107,11 @@ def place_text(text, img, best_vert_placement, engineering_mode):
     org = (im_center - int(rect_width * 0.5) + text_margin_x,
            best_vert_placement + int(rect_height * 0.5) - text_margin_y)  # text origin
     color = (255, 255, 255)  # Blue color in BGR
-    text_thickness = int(im_width / 300)
+
 
     font_scale = get_optimal_font_scale(text, rect_width - (2 * text_margin_x),
                                         rect_height - ( 2 * text_margin_y), font)
+    text_thickness =  int(font_scale * 3)
     cv2.putText(img, text, org, font, font_scale, color, text_thickness, cv2.LINE_AA)
     cv2.imwrite("output/img_text.jpg", img)
     return img
